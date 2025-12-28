@@ -10,13 +10,6 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 /* =======================
-   PREFLIGHT (IMPORTANT)
-======================= */
-router.options("*", (req, res) => {
-  res.sendStatus(200);
-});
-
-/* =======================
    AUTH ROUTES
 ======================= */
 router.post("/register", register);

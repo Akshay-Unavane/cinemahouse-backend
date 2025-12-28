@@ -8,29 +8,49 @@ dotenv.config();
 
 const app = express();
 
-// CORS CONFIGURATION
-app.use(cors({
-  origin: ["http://localhost:5173", "https://cinemahouse-frontend.vercel.app"], // add your frontend URL
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization"],
-}));
+/* =======================
+   CORS CONFIG (IMPORTANT)
+======================= */
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://cinemahouse-frontend.vercel.app", // your live frontend
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
-// Middleware
+// Explicit preflight handler (SAFE)
+app.options("*", cors());
+
+/* =======================
+   MIDDLEWARE
+======================= */
 app.use(express.json());
 
-// Routes
+/* =======================
+   ROUTES
+======================= */
 app.use("/api/auth", authRoutes);
 
-// Test endpoint
 app.get("/", (req, res) => {
-  res.send("Backend running 🚀");
+  res.send("CinemaHouse Backend running 🚀");
 });
 
-// MongoDB + Server
+/* =======================
+   DATABASE + SERVER
+======================= */
 const PORT = process.env.PORT || 5000;
-mongoose.connect(process.env.MONGO_URL)
+
+mongoose
+  .connect(process.env.MONGO_URL)
   .then(() => {
     console.log("✅ MongoDB connected");
-    app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+    app.listen(PORT, () =>
+      console.log(`🚀 Server running on port ${PORT}`)
+    );
   })
   .catch((err) => console.error("❌ MongoDB error:", err));
