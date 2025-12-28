@@ -23,7 +23,7 @@ app.use("/api/auth", authRoutes);
 
 // TEST ENDPOINT
 app.get("/", (req, res) => {
-  res.send("Backend running 🚀");
+  res.send("Backend running Succesfully 🚀");
 });
 
 // SERVER + MONGO
