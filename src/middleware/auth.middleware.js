@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "Your_jwt_secret"
 
 // ENHANCED AUTH MIDDLEWARE
 export const authMiddleware = async (req, res, next) => {
@@ -12,7 +11,7 @@ export const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: "No token provided" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.userId).select("-password"); // Include watchlist
 
     if (!user) {

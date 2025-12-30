@@ -121,7 +121,7 @@ export const resetPassword = async (req, res) => {
 ========================= */
 export const deleteAccount = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user?.userId || req.user?._id || req.user?.id;
     const user = await User.findByIdAndDelete(userId);
 
     if (!user) {
@@ -140,7 +140,7 @@ export const deleteAccount = async (req, res) => {
 ========================= */
 export const updateUsername = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user?.userId || req.user?._id || req.user?.id;
     const { newUsername } = req.body;
 
     if (!newUsername) {

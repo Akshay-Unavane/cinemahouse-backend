@@ -3,7 +3,7 @@ import User from "../models/User.js";
 // ================= ADD TO WATCHLIST =================
 export const addToWatchlist = async (req, res) => {
   try {
-    const { userId } = req.user; // from JWT middleware
+    const userId = req.user?.userId || req.user?._id || req.user?.id; // support decoded token or attached user doc
     const movie = req.body;
 
     if (!movie?.movieId) {
@@ -36,7 +36,7 @@ export const addToWatchlist = async (req, res) => {
 // ================= GET WATCHLIST =================
 export const getWatchlist = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user?.userId || req.user?._id || req.user?.id;
 
     const user = await User.findById(userId).select("watchlist");
     if (!user) {
@@ -53,7 +53,7 @@ export const getWatchlist = async (req, res) => {
 // ================= REMOVE FROM WATCHLIST =================
 export const removeFromWatchlist = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user?.userId || req.user?._id || req.user?.id;
     const { movieId } = req.params;
 
     const user = await User.findById(userId);
