@@ -4,6 +4,7 @@ import {
   login,
   resetPassword,
   deleteAccount,
+  updateUsername,
 } from "../controllers/auth.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
@@ -19,6 +20,7 @@ router.post("/reset-password", resetPassword);
 /* =======================
    PROTECTED ROUTES
 ======================= */
+router.put("/update-username", authMiddleware, updateUsername)
 router.delete("/delete-account", authMiddleware, deleteAccount);
 
 export default router;

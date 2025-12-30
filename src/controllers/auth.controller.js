@@ -131,3 +131,33 @@ export const deleteAccount = async (req, res) => {
     res.status(500).json({ message: "Account deletion failed" });
   }
 };
+
+/* =========================
+    UPDATE USERNAME (JWT)
+========================= */
+export const updateUsername = async (req, res) => {
+  try {
+    const { newUsername } = req.body;
+
+    if (!newUsername || !newUsername.trim()) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    req.user.username = newUsername.trim();
+    await req.user.save(); // ✅ WORKS NOW
+
+    res.json({
+      message: "Username updated successfully",
+      user: {
+        _id: req.user._id,
+        username: req.user.username,
+        email: req.user.email,
+        avatar: req.user.avatar || null,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+

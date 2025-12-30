@@ -1,8 +1,7 @@
 import jwt from "jsonwebtoken";
+import User from "../models/User.model.js";
 
-// const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
-
-export const authMiddleware = (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -12,7 +11,14 @@ export const authMiddleware = (req, res, next) => {
   try {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+
+    // ✅ LOAD FULL USER DOCUMENT
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.user = user; // ✅ REAL MONGOOSE DOCUMENT
     next();
   } catch (error) {
     return res.status(401).json({ message: "Invalid token" });
