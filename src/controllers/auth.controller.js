@@ -29,7 +29,7 @@ export const register = async (req, res) => {
     });
 
     const token = jwt.sign(
-      { userId: user._id, username: user.username, email: user.email },
+      { id: user._id, username: user.username, email: user.email },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -70,7 +70,7 @@ export const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, username: user.username, email: user.email },
+      { id: user._id, username: user.username, email: user.email },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -121,9 +121,9 @@ export const resetPassword = async (req, res) => {
 ========================= */
 export const deleteAccount = async (req, res) => {
   try {
-    const userId = req.user.userId; // ✅ comes from JWT
+    // const userId = req.user._id; // ✅ comes from JWT
 
-    await User.findByIdAndDelete(userId);
+    await User.findByIdAndDelete(req.user._id);
 
     res.status(200).json({ message: "Account deleted successfully" });
   } catch (error) {
