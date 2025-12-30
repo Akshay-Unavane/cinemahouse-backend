@@ -121,14 +121,17 @@ export const resetPassword = async (req, res) => {
 ========================= */
 export const deleteAccount = async (req, res) => {
   try {
-    const userId = req.user._id; // ✅ comes from JWT
+    const { userId } = req.user;
+    const user = await User.findByIdAndDelete(userId);
 
-    await User.findByIdAndDelete(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    res.status(200).json({ message: "Account deleted successfully" });
-  } catch (error) {
-    console.error("DELETE ACCOUNT ERROR:", error);
-    res.status(500).json({ message: "Account deletion failed" });
+    res.json({ message: "Account deleted successfully" });
+  } catch (err) {
+    console.error("DELETE ACCOUNT ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -137,26 +140,25 @@ export const deleteAccount = async (req, res) => {
 ========================= */
 export const updateUsername = async (req, res) => {
   try {
+    const { userId } = req.user;
     const { newUsername } = req.body;
 
-    if (!newUsername || !newUsername.trim()) {
-      return res.status(400).json({ message: "Username is required" });
+    if (!newUsername) {
+      return res.status(400).json({ message: "New username is required" });
     }
 
-    req.user.username = newUsername.trim();
-    await req.user.save(); // ✅ WORKS NOW
+    const user = await User.findById(userId);
 
-    res.json({
-      message: "Username updated successfully",
-      user: {
-        _id: req.user._id,
-        username: req.user.username,
-        email: req.user.email,
-        avatar: req.user.avatar || null,
-      },
-    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.username = newUsername;
+    await user.save();
+
+    res.json({ message: "Username updated successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("UPDATE USERNAME ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

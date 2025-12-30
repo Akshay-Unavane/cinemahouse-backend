@@ -20,7 +20,7 @@ router.post("/reset-password", resetPassword);
 /* =======================
    PROTECTED ROUTES
 ======================= */
-router.put("/update-username", authMiddleware, updateUsername)
+router.put("/update-username", authMiddleware, updateUsername);
 router.delete("/delete-account", authMiddleware, deleteAccount);
 
 export default router;

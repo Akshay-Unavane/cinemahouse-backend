@@ -3,27 +3,26 @@ import User from "../models/User.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "Your_jwt_secret"
 
+// ENHANCED AUTH MIDDLEWARE
 export const authMiddleware = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    const token = req.headers.authorization?.split(" ")[1];
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Unauthorized" });
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
     }
 
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId);
+
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    req.user = user;
+    req.user = { userId: user._id, username: user.username };
     next();
-  } catch (error) {
-    console.error("AUTH MIDDLEWARE ERROR:", error.message);
-    
-    return res.status(401).json({ message: "Invalid token" });
+  } catch (err) {
+    console.error("AUTH MIDDLEWARE ERROR:", err);
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 };
