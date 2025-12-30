@@ -23,4 +23,9 @@ router.post("/reset-password", resetPassword);
 router.put("/update-username", authMiddleware, updateUsername);
 router.delete("/delete-account", authMiddleware, deleteAccount);
 
+// Debug: return current authenticated user (useful for verifying token)
+router.get("/me", authMiddleware, (req, res) => {
+   res.json({ user: req.user });
+});
+
 export default router;
