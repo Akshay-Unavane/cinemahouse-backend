@@ -1,10 +1,11 @@
 import express from "express";
 import {
-  register,
-  login,
-  resetPassword,
-  deleteAccount,
-  updateUsername,
+   register,
+   login,
+   resetPassword,
+   deleteAccount,
+   updateUsername,
+   updateAvatar,
 } from "../controllers/auth.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
@@ -21,6 +22,7 @@ router.post("/reset-password", resetPassword);
    PROTECTED ROUTES
 ======================= */
 router.put("/update-username", authMiddleware, updateUsername);
+router.put("/update-avatar", authMiddleware, updateAvatar);
 router.delete("/delete-account", authMiddleware, deleteAccount);
 
 // Debug: return current authenticated user (useful for verifying token)

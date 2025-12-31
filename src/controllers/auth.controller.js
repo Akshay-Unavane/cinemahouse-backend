@@ -163,3 +163,36 @@ export const updateUsername = async (req, res) => {
   }
 };
 
+/* =========================
+   UPDATE AVATAR (accepts data URL in JSON)
+   Note: This endpoint expects { avatar: "data:image/...;base64,..." }
+========================= */
+export const updateAvatar = async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?._id || req.user?.id;
+    const { avatar } = req.body;
+    if (!avatar) {
+      return res.status(400).json({ message: "Avatar data is required" });
+    }
+
+    // Reject very large payloads server-side to avoid storing huge base64 strings
+    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+    if (typeof avatar === "string" && avatar.length > MAX_BYTES) {
+      return res.status(413).json({ message: "Avatar payload too large" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.avatar = avatar;
+    await user.save();
+
+    res.json({ message: "Avatar updated successfully", avatar: user.avatar });
+  } catch (err) {
+    console.error("UPDATE AVATAR ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+

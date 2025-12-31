@@ -22,7 +22,8 @@ app.use(
 );
 
 // MIDDLEWARE
-app.use(express.json());
+// Allow larger JSON payloads for avatar data URLs (but keep reasonable limit)
+app.use(express.json({ limit: "5mb" }));
 
 // ROUTES (AUTH — UNCHANGED)
 app.use("/api/auth", authRoutes);
