@@ -8,6 +8,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import heroRoutes from "./routes/hero.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import { getCorsOrigins, validateEnv } from "./config/env.js";
+import { getEmailModeLabel, verifyEmailConnection } from "./utils/sendEmail.js";
 
 dotenv.config();
 
@@ -62,8 +63,17 @@ const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGO_URL)
-  .then(() => {
+  .then(async () => {
     console.log("✅ MongoDB connected");
+    const emailStatus = await verifyEmailConnection();
+    if (emailStatus.ok) {
+      console.log(`✅ Email ready: ${getEmailModeLabel()}`);
+    } else {
+      console.log(`📧 Email mode: ${getEmailModeLabel()}`);
+      if (emailStatus.error) {
+        console.warn("⚠️  SMTP verify failed:", emailStatus.error);
+      }
+    }
     app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
   })
   .catch((err) => {

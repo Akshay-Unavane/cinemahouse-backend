@@ -4,6 +4,8 @@ import {
    login,
    logout,
    resetPassword,
+   forgotPassword,
+   verifyResetPassword,
    changePassword,
    deleteAccount,
    updateUsername,
@@ -19,6 +21,8 @@ const router = express.Router();
 ======================= */
 router.post("/register", register);
 router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-reset-password", verifyResetPassword);
 router.post("/reset-password", resetPassword);
 
 /* =======================

@@ -68,6 +68,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    resetOtp: {
+      type: String,
+      default: null,
+    },
+    resetOtpExpires: {
+      type: Date,
+      default: null,
+    },
     watchlist: [watchlistSchema],
   },
   { timestamps: true }
