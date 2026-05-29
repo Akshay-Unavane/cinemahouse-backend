@@ -1,6 +1,7 @@
 import express from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import User from "../models/User.js";
+import Movie from "../models/Movie.js";
 
 const router = express.Router();
 
@@ -41,6 +42,20 @@ router.post("/", authMiddleware, async (req, res) => {
 
     req.user.watchlist.push(req.body);
     await req.user.save();
+
+    if (req.body.title) {
+      await Movie.findOneAndUpdate(
+        { tmdbId: movieId, mediaType },
+        {
+          tmdbId: movieId,
+          title: req.body.title,
+          mediaType,
+          poster_path: req.body.poster_path ?? null,
+          release_date: req.body.release_date ?? null,
+        },
+        { upsert: true }
+      );
+    }
 
     // Return fresh watchlist
     const user = await User.findById(req.user._id).select("watchlist");
@@ -85,5 +100,7 @@ router.delete("/:movieId", authMiddleware, async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
+
+// admin routes removed from watchlist
 
 export default router;

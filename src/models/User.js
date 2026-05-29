@@ -51,6 +51,23 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    role: {
+      type: String,
+      enum: ["user", "prime", "admin"],
+      default: "user",
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
+    lastActiveAt: {
+      type: Date,
+      default: null,
+    },
     watchlist: [watchlistSchema],
   },
   { timestamps: true }
