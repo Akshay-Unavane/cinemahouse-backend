@@ -178,7 +178,20 @@ export const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      return res.json({ message: genericMessage, expiresInMinutes: 15 });
+      return res.json({
+        message: genericMessage,
+        expiresInMinutes: 15,
+        emailSent: false,
+      });
+    }
+
+    if (!isEmailConfigured()) {
+      return res.status(503).json({
+        message:
+          "Password reset email is not configured on the server. Contact support or try again later.",
+        emailSent: false,
+        emailConfigured: false,
+      });
     }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
@@ -186,49 +199,28 @@ export const forgotPassword = async (req, res) => {
     user.resetOtpExpires = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    const payload = {
-      message: genericMessage,
-      expiresInMinutes: 15,
-      emailSent: false,
-      emailConfigured: isEmailConfigured(),
-    };
-
     try {
-      const emailResult = await sendPasswordResetEmail(
-        normalizedEmail,
-        otp,
-        user.username
-      );
-      payload.emailSent = true;
-
-      if (emailResult.mode === "smtp") {
-        payload.message =
-          "Reset code sent to your email. Check your inbox and spam folder.";
-      } else if (emailResult.previewUrl) {
-        payload.emailPreviewUrl = emailResult.previewUrl;
-        payload.message =
-          "Test email sent. Open the preview link below to see your reset code.";
-      }
+      await sendPasswordResetEmail(normalizedEmail, otp, user.username);
+      return res.json({
+        message:
+          "Reset code sent to your email. Check your inbox and spam folder.",
+        expiresInMinutes: 15,
+        emailSent: true,
+        emailConfigured: true,
+      });
     } catch (emailErr) {
       console.error("RESET EMAIL ERROR:", emailErr.message);
-      payload.emailError = emailErr.message;
-    }
+      user.resetOtp = null;
+      user.resetOtpExpires = null;
+      await user.save();
 
-    if (
-      !payload.emailSent &&
-      (process.env.NODE_ENV !== "production" ||
-        process.env.RESET_OTP_DEV_MODE === "true")
-    ) {
-      payload.devOtp = otp;
-      console.log(`[DEV] Password reset OTP for ${normalizedEmail}: ${otp}`);
+      return res.status(500).json({
+        message: "Could not send reset email. Please try again in a few minutes.",
+        emailSent: false,
+        emailConfigured: true,
+        emailError: emailErr.message,
+      });
     }
-
-    if (!payload.emailSent && !payload.devOtp) {
-      payload.message =
-        "Could not send email. Configure SMTP in Backend/.env (see .env.example).";
-    }
-
-    res.json(payload);
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);
     res.status(500).json({ message: "Server error" });

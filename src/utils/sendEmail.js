@@ -1,13 +1,12 @@
 import nodemailer from "nodemailer";
 
-let etherealCache = null;
-
 export function isEmailConfigured() {
-  return Boolean(
-    process.env.SMTP_HOST &&
-      process.env.SMTP_USER &&
-      process.env.SMTP_PASS
-  );
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
+  if (process.env.SMTP_SERVICE?.trim() === "gmail") {
+    return Boolean(user && pass);
+  }
+  return Boolean(process.env.SMTP_HOST?.trim() && user && pass);
 }
 
 function buildMailContent(otp, username = "there") {
@@ -32,44 +31,36 @@ function buildMailContent(otp, username = "there") {
 }
 
 function createSmtpTransport() {
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim().replace(/\s/g, "");
+
+  if (process.env.SMTP_SERVICE?.trim() === "gmail") {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass },
+    });
+  }
+
   const port = Number(process.env.SMTP_PORT || 587);
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    host: process.env.SMTP_HOST?.trim(),
     port,
     secure: port === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
+    auth: { user, pass },
     tls: {
       rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== "false",
     },
   });
 }
 
-async function getEtherealTransport() {
-  if (etherealCache) return etherealCache;
-
-  const testAccount = await nodemailer.createTestAccount();
-  etherealCache = {
-    transporter: nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    }),
-    user: testAccount.user,
-  };
-
-  console.log("📧 Ethereal test inbox ready:", testAccount.user);
-  return etherealCache;
-}
-
 export async function verifyEmailConnection() {
-  if (!isEmailConfigured()) return { ok: false, mode: "none" };
+  if (!isEmailConfigured()) {
+    return {
+      ok: false,
+      mode: "none",
+      error: "SMTP not configured. Set SMTP_SERVICE=gmail and SMTP_USER/SMTP_PASS in .env",
+    };
+  }
 
   try {
     const transporter = createSmtpTransport();
@@ -80,48 +71,45 @@ export async function verifyEmailConnection() {
   }
 }
 
-/**
- * Sends reset OTP email.
- * Returns { previewUrl } for Ethereal in local dev, or {} for real SMTP.
- */
 export async function sendPasswordResetEmail(to, otp, username = "there") {
+  if (!isEmailConfigured()) {
+    throw new Error(
+      "Email is not configured on the server. Add SMTP settings to Backend/.env (see .env.example)."
+    );
+  }
+
   const from =
-    process.env.SMTP_FROM ||
-    (process.env.SMTP_USER
-      ? `CinemaHouse <${process.env.SMTP_USER}>`
-      : "CinemaHouse <noreply@cinemahouse.local>");
+    process.env.SMTP_FROM?.trim() ||
+    `CinemaHouse <${process.env.SMTP_USER?.trim()}>`;
 
-  const content = buildMailContent(otp, username);
+  const transporter = createSmtpTransport();
 
-  if (isEmailConfigured()) {
-    const transporter = createSmtpTransport();
+  try {
+    await transporter.verify();
+  } catch (err) {
+    throw new Error(
+      `SMTP connection failed: ${err.message}. Check SMTP_USER and SMTP_PASS (use Gmail App Password, not normal password).`
+    );
+  }
+
+  try {
     await transporter.sendMail({
       from,
       to,
-      ...content,
+      ...buildMailContent(otp, username),
     });
-    return { mode: "smtp" };
+  } catch (err) {
+    const hint =
+      err.message?.includes("Invalid login") || err.message?.includes("535")
+        ? " Use a Gmail App Password (16 chars), not your regular Gmail password."
+        : "";
+    throw new Error(`Failed to send email: ${err.message}.${hint}`);
   }
 
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("SMTP is not configured");
-  }
-
-  const { transporter } = await getEtherealTransport();
-  const info = await transporter.sendMail({
-    from: `CinemaHouse <${etherealCache.user}>`,
-    to,
-    ...content,
-  });
-
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  console.log("📧 Ethereal preview URL:", previewUrl);
-
-  return { mode: "ethereal", previewUrl };
+  return { mode: "smtp" };
 }
 
 export function getEmailModeLabel() {
-  if (isEmailConfigured()) return "SMTP (real email)";
-  if (process.env.NODE_ENV === "production") return "disabled";
-  return "Ethereal test inbox (local dev)";
+  if (isEmailConfigured()) return "SMTP email enabled";
+  return "SMTP not configured";
 }
